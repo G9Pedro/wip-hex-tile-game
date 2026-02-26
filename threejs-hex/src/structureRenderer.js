@@ -108,8 +108,13 @@ export class StructureRenderer {
 
     const { x, z } = hexToWorld(row, col);
     const h = this.mapRenderer.getTileHeight(row, col);
-    if (obj.isGroup || obj.isObject3D) {
+    const scale = 1.6;
+    if (obj.isGroup) {
       obj.position.set(x, h + 0.01, z);
+      obj.scale.setScalar(scale);
+    } else if (obj.isObject3D) {
+      obj.position.set(x, h + 0.01, z);
+      obj.scale.setScalar(scale);
     }
 
     this.group.add(obj);

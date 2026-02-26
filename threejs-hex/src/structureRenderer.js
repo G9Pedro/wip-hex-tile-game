@@ -100,19 +100,19 @@ export class StructureRenderer {
     const a = accent(playerRgb);
     const builder = B[type] || B.outpost;
     const obj = builder(m, a);
+    obj.position.y = 0.3;
 
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(0.42, 0.52, 6),
+      new THREE.RingGeometry(0.5, 0.65, 6),
       baseMat(playerRgb)
     );
     ring.rotation.x = -Math.PI / 2;
-    ring.position.y = -0.01;
 
     const wrapper = new THREE.Group();
     wrapper.add(obj);
     wrapper.add(ring);
-    wrapper.scale.setScalar(1.5);
-    wrapper.position.set(x, h + 0.02, z);
+    wrapper.scale.setScalar(1.8);
+    wrapper.position.set(x, h, z);
 
     this.group.add(wrapper);
     this.meshes.set(id, wrapper);

@@ -5,23 +5,21 @@ const _c = new THREE.Color();
 function ph(rgb) { return _c.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255).getHex(); }
 
 function mat(rgb) {
-  return new THREE.MeshStandardMaterial({ color: ph(rgb), roughness: 0.35, metalness: 0.15,
-    emissive: ph(rgb), emissiveIntensity: 0.25 });
+  return new THREE.MeshLambertMaterial({ color: ph(rgb), emissive: ph(rgb), emissiveIntensity: 0.3 });
 }
-function accent(rgb) {
-  return new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.1,
-    emissive: ph(rgb), emissiveIntensity: 0.15 });
+function accent() {
+  return new THREE.MeshLambertMaterial({ color: 0xeeeeee, emissive: 0x444444, emissiveIntensity: 0.2 });
 }
 function baseMat(rgb) {
-  return new THREE.MeshBasicMaterial({ color: ph(rgb), transparent: true, opacity: 0.6, depthTest: false });
+  return new THREE.MeshBasicMaterial({ color: ph(rgb), transparent: true, opacity: 0.55, depthTest: false });
 }
 
 const B = {
   outpost(m, a) {
     const g = new THREE.Group();
     g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.32, 0.5, 6), m));
-    const r = new THREE.Mesh(new THREE.ConeGeometry(0.36, 0.32, 6), a);
-    r.position.y = 0.4; g.add(r);
+    const r = new THREE.Mesh(new THREE.ConeGeometry(0.36, 0.35, 6), a);
+    r.position.y = 0.42; g.add(r);
     return g;
   },
   farm(m, a) {
@@ -36,8 +34,6 @@ const B = {
     g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 0.55, 8), m));
     const f = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 4), a);
     f.position.y = 0.47; g.add(f);
-    const fl = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.02), a);
-    fl.position.set(0, 0.55, 0); g.add(fl);
     return g;
   },
   factory(m, a) {
@@ -56,12 +52,8 @@ const B = {
     }
     return g;
   },
-  road(m) {
-    return new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.08, 8), m);
-  },
-  wall(m) {
-    return new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.1), m);
-  },
+  road(m) { return new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.1, 8), m); },
+  wall(m) { return new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.1), m); },
   ship(m, a) {
     const g = new THREE.Group();
     g.add(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.14, 0.22), m));
@@ -76,9 +68,7 @@ const B = {
     p.position.set(0.18, 0.22, 0.18); g.add(p);
     return g;
   },
-  merc_camp(m) {
-    return new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.42, 6), m);
-  },
+  merc_camp(m) { return new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.42, 6), m); },
 };
 
 export class StructureRenderer {
@@ -97,10 +87,10 @@ export class StructureRenderer {
     const h = this.mapRenderer.getTileHeight(row, col);
 
     const m = mat(playerRgb);
-    const a = accent(playerRgb);
+    const a = accent();
     const builder = B[type] || B.outpost;
     const obj = builder(m, a);
-    obj.position.y = 0.3;
+    obj.position.y = 0.8;
 
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(0.5, 0.65, 6),

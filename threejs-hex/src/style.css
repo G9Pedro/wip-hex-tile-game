@@ -38,6 +38,9 @@ body {
   pointer-events: none;
   overflow: hidden;
 }
+#css2d-overlay * {
+  pointer-events: none !important;
+}
 
 .hidden { display: none !important; }
 

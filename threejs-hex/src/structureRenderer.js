@@ -8,24 +8,29 @@ function playerHex(rgb) {
   return _color.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255).getHex();
 }
 
-function createOutlinedSprite(texture, rgb, scale = 1.8) {
+function createOutlinedSprite(texture, rgb, scale = 2.2) {
   const mat = new THREE.SpriteMaterial({
     map: texture,
-    alphaTest: 0.3,
+    alphaTest: 0.1,
     sizeAttenuation: true,
+    depthTest: true,
+    depthWrite: false,
   });
   const sprite = new THREE.Sprite(mat);
   sprite.scale.set(scale, scale, 1);
+  sprite.renderOrder = 100;
 
-  const ringGeo = new THREE.RingGeometry(scale * 0.38, scale * 0.42, 6);
+  const ringGeo = new THREE.RingGeometry(scale * 0.35, scale * 0.42, 6);
   const ringMat = new THREE.MeshBasicMaterial({
     color: playerHex(rgb),
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: 0.7,
+    opacity: 0.8,
+    depthTest: false,
   });
   const ring = new THREE.Mesh(ringGeo, ringMat);
   ring.rotation.x = -Math.PI / 2;
+  ring.renderOrder = 99;
 
   const group = new THREE.Group();
   group.add(sprite);
@@ -133,14 +138,15 @@ export class StructureRenderer {
 
     let obj;
     if (tex) {
-      obj = createOutlinedSprite(tex, playerRgb, 1.8);
-      obj.position.set(x, h + 0.7, z);
+      obj = createOutlinedSprite(tex, playerRgb, 2.2);
+      obj.position.set(x, h + 1.0, z);
     } else {
       obj = createFallbackStructure(playerRgb, type);
-      obj.position.set(x, h + 0.01, z);
-      obj.scale.setScalar(1.6);
+      obj.position.set(x, h + 0.3, z);
+      obj.scale.setScalar(1.8);
     }
 
+    obj.renderOrder = 100;
     this.group.add(obj);
     this.meshes.set(id, obj);
     return obj;

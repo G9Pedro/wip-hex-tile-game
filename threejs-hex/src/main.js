@@ -8,7 +8,7 @@ import { GameUI } from './ui.js';
 import { Minimap } from './minimap.js';
 import { loadTileTextures, loadStructureTextures } from './assetLoader.js';
 import { hexToWorld, worldToHex, tileKey } from './hex.js';
-import { RESOURCE_TILES } from './config.js';
+import { RESOURCE_TILES, STRUCTURE_DEFS } from './config.js';
 
 class App {
   constructor() {
@@ -28,7 +28,7 @@ class App {
 
     this._hoverTile = null;
     this._aiRunning = false;
-    this._groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.25);
+    this._groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.30);
     this._mouse = new THREE.Vector2();
     this._intersection = new THREE.Vector3();
 
@@ -117,16 +117,35 @@ class App {
     }
   }
 
-  _onClick() {
-    if (this._aiRunning || !this._hoverTile) return;
+  _onClick(e) {
+    if (this._aiRunning) return;
+
+    this._mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    this._mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    this.scene.raycaster.setFromCamera(this._mouse, this.scene.camera);
+
+    if (this.scene.raycaster.ray.intersectPlane(this._groundPlane, this._intersection)) {
+      const { row, col } = worldToHex(this._intersection.x, this._intersection.z);
+      if (this.gameState.isValidTile(row, col)) {
+        this._hoverTile = { row, col };
+      }
+    }
+
+    if (!this._hoverTile) return;
     const { row, col } = this._hoverTile;
     const type = this.ui.selectedStructure;
     const player = this.gameState.currentPlayer;
     if (player.isAI) return;
 
     if (type) {
-      if (this.gameState.canPlace(type, row, col, player.id)) {
+      const canP = this.gameState.canPlace(type, row, col, player.id);
+      console.log('[CLICK]', { type, row, col, playerId: player.id, canPlace: canP,
+        tileType: this.gameState.getTileType(row, col),
+        isLand: this.gameState.isLand(row, col),
+        affordable: player.canAfford(STRUCTURE_DEFS[type]?.cost || {}) });
+      if (canP) {
         const s = this.gameState.placeStructure(type, row, col, player.id);
+        console.log('[PLACED]', s.id, s.type, 'at', row, col, 'resources:', { ...player.resources });
         this.structureRenderer.addStructure(s.id, s.type, row, col, player.rgb);
         this.ui.clearSelection();
         this._updateUI();

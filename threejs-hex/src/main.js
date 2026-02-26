@@ -6,7 +6,6 @@ import { GameState } from './gameState.js';
 import { AIAgent } from './aiAgent.js';
 import { GameUI } from './ui.js';
 import { Minimap } from './minimap.js';
-import { loadTileTextures, loadStructureTextures } from './assetLoader.js';
 import { hexToWorld, worldToHex, tileKey } from './hex.js';
 import { RESOURCE_TILES, STRUCTURE_DEFS } from './config.js';
 
@@ -22,9 +21,6 @@ class App {
     this.aiAgent = null;
     this.ui = new GameUI();
     this.minimap = new Minimap(document.getElementById('minimap-container'));
-
-    this.tileTextures = null;
-    this.structureTextures = null;
 
     this._hoverTile = null;
     this._aiRunning = false;
@@ -51,21 +47,15 @@ class App {
     this.ui.showLoading(true);
 
     try {
-      const [mapData, tileTex, structTex] = await Promise.all([
-        opts.mapValue === 'generate' ? this._generateMap(opts) : this._loadMap(opts.mapValue),
-        this.tileTextures || loadTileTextures(),
-        this.structureTextures || loadStructureTextures(),
-      ]);
-
-      this.tileTextures = tileTex;
-      this.structureTextures = structTex;
+      const mapData = opts.mapValue === 'generate'
+        ? await this._generateMap(opts)
+        : await this._loadMap(opts.mapValue);
 
       this.gameState.init(mapData, opts.humanCount, opts.aiCount, opts.difficulty);
       this.aiAgent = new AIAgent(opts.difficulty);
 
-      this.structureRenderer.setTextures(this.structureTextures);
       this.structureRenderer.clear();
-      this.mapRenderer.renderMap(mapData, this.tileTextures);
+      this.mapRenderer.renderMap(mapData);
       this.minimap.renderMap(mapData);
 
       const center = this.mapRenderer.getCenter();
@@ -132,14 +122,8 @@ class App {
     if (player.isAI) return;
 
     if (type) {
-      const canP = this.gameState.canPlace(type, row, col, player.id);
-      console.log('[CLICK]', { type, row, col, playerId: player.id, canPlace: canP,
-        tileType: this.gameState.getTileType(row, col),
-        isLand: this.gameState.isLand(row, col),
-        affordable: player.canAfford(STRUCTURE_DEFS[type]?.cost || {}) });
-      if (canP) {
+      if (this.gameState.canPlace(type, row, col, player.id)) {
         const s = this.gameState.placeStructure(type, row, col, player.id);
-        console.log('[PLACED]', s.id, s.type, 'at', row, col, 'resources:', { ...player.resources });
         this.structureRenderer.addStructure(s.id, s.type, row, col, player.rgb);
         this.ui.clearSelection();
         this._updateUI();

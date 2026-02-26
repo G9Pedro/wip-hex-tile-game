@@ -4,52 +4,59 @@ import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 
 export class SceneManager {
   constructor(canvas, cssContainer) {
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.toneMappingExposure = 1.2;
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.cssRenderer = new CSS2DRenderer({ element: cssContainer });
     this.cssRenderer.setSize(window.innerWidth, window.innerHeight);
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0b1020);
-    this.scene.fog = new THREE.FogExp2(0x0b1020, 0.006);
+    this.scene.background = new THREE.Color(0x1a2744);
+    this.scene.fog = new THREE.FogExp2(0x1a2744, 0.004);
 
-    this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 500);
-    this.camera.position.set(0, 40, 35);
+    this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 600);
+    this.camera.position.set(0, 50, 40);
 
     this.controls = new OrbitControls(this.camera, canvas);
     this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.08;
-    this.controls.maxPolarAngle = Math.PI * 0.44;
-    this.controls.minPolarAngle = Math.PI * 0.1;
-    this.controls.minDistance = 5;
-    this.controls.maxDistance = 180;
-    this.controls.panSpeed = 1.4;
-    this.controls.zoomSpeed = 1.2;
+    this.controls.dampingFactor = 0.06;
+    this.controls.maxPolarAngle = Math.PI * 0.48;
+    this.controls.minPolarAngle = Math.PI * 0.08;
+    this.controls.minDistance = 4;
+    this.controls.maxDistance = 200;
+    this.controls.panSpeed = 1.5;
+    this.controls.zoomSpeed = 1.0;
 
     this._setupLights();
-    this._onResize = this._onResize.bind(this);
-    window.addEventListener('resize', this._onResize);
+    window.addEventListener('resize', () => this._onResize());
   }
 
   _setupLights() {
-    const ambient = new THREE.AmbientLight(0x99aabb, 0.7);
-    this.scene.add(ambient);
+    this.scene.add(new THREE.AmbientLight(0xb0c4de, 0.55));
 
-    const sun = new THREE.DirectionalLight(0xfff0dd, 1.5);
-    sun.position.set(50, 100, 40);
+    const sun = new THREE.DirectionalLight(0xfff5e0, 1.6);
+    sun.position.set(60, 120, 50);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.near = 10;
+    sun.shadow.camera.far = 300;
+    sun.shadow.camera.left = -100;
+    sun.shadow.camera.right = 100;
+    sun.shadow.camera.top = 100;
+    sun.shadow.camera.bottom = -100;
     this.scene.add(sun);
 
-    const fill = new THREE.DirectionalLight(0x6688bb, 0.35);
-    fill.position.set(-30, 50, -20);
+    const fill = new THREE.DirectionalLight(0x6090cc, 0.35);
+    fill.position.set(-40, 60, -30);
     this.scene.add(fill);
 
-    const rim = new THREE.DirectionalLight(0x334466, 0.2);
-    rim.position.set(0, 10, -50);
-    this.scene.add(rim);
+    const hemi = new THREE.HemisphereLight(0x87ceeb, 0x3a5a3a, 0.3);
+    this.scene.add(hemi);
   }
 
   _onResize() {
@@ -62,7 +69,7 @@ export class SceneManager {
 
   lookAt(x, z) {
     this.controls.target.set(x, 0, z);
-    this.camera.position.set(x + 8, 35, z + 28);
+    this.camera.position.set(x + 5, 30, z + 22);
     this.controls.update();
   }
 

@@ -28,9 +28,7 @@ class App {
 
     this._hoverTile = null;
     this._aiRunning = false;
-    this._groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.30);
     this._mouse = new THREE.Vector2();
-    this._intersection = new THREE.Vector3();
 
     this._bindEvents(canvas);
     this._bindUI();
@@ -103,17 +101,15 @@ class App {
     this._mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 
     this.scene.raycaster.setFromCamera(this._mouse, this.scene.camera);
-    if (this.scene.raycaster.ray.intersectPlane(this._groundPlane, this._intersection)) {
-      const { row, col } = worldToHex(this._intersection.x, this._intersection.z);
-      if (this.gameState.isValidTile(row, col)) {
-        this._hoverTile = { row, col };
-        this.mapRenderer.showHover(row, col);
-        this._updateTileInfo(row, col);
-      } else {
-        this._hoverTile = null;
-        this.mapRenderer.hideHover();
-        this.ui.setTileInfo('');
-      }
+    const tile = this.mapRenderer.raycastTile(this.scene.raycaster);
+    if (tile && this.gameState.isValidTile(tile.row, tile.col)) {
+      this._hoverTile = tile;
+      this.mapRenderer.showHover(tile.row, tile.col);
+      this._updateTileInfo(tile.row, tile.col);
+    } else {
+      this._hoverTile = null;
+      this.mapRenderer.hideHover();
+      this.ui.setTileInfo('');
     }
   }
 
@@ -124,11 +120,9 @@ class App {
     this._mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
     this.scene.raycaster.setFromCamera(this._mouse, this.scene.camera);
 
-    if (this.scene.raycaster.ray.intersectPlane(this._groundPlane, this._intersection)) {
-      const { row, col } = worldToHex(this._intersection.x, this._intersection.z);
-      if (this.gameState.isValidTile(row, col)) {
-        this._hoverTile = { row, col };
-      }
+    const tile = this.mapRenderer.raycastTile(this.scene.raycaster);
+    if (tile && this.gameState.isValidTile(tile.row, tile.col)) {
+      this._hoverTile = tile;
     }
 
     if (!this._hoverTile) return;

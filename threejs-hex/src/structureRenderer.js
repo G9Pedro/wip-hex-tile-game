@@ -122,6 +122,7 @@ export class StructureRenderer {
     this.scene.add(this.group);
     this.meshes = new Map();
     this.structureTextures = null;
+
   }
 
   setTextures(textures) { this.structureTextures = textures; }
@@ -129,20 +130,28 @@ export class StructureRenderer {
   addStructure(id, type, row, col, playerRgb) {
     const { x, z } = hexToWorld(row, col);
     const h = this.mapRenderer.getTileHeight(row, col);
+    console.log('[STRUCT ADD]', { id, type, row, col, x, z, h });
 
-    const mat = makeStructMat(playerRgb);
+    const geo = new THREE.BoxGeometry(1.5, 2, 1.5);
+    const mat = new THREE.MeshBasicMaterial({ color: pHex(playerRgb) });
+    const marker = new THREE.Mesh(geo, mat);
+    marker.position.set(x, h + 1.5, z);
+
+    const mat2 = makeStructMat(playerRgb);
     const gmat = makeGlowMat(playerRgb);
     const builder = BUILDERS[type] || BUILDERS.outpost;
-    const obj = builder(mat, gmat);
+    const structObj = builder(mat2, gmat);
+    structObj.scale.setScalar(1.4);
+    structObj.position.set(x, h + 0.5, z);
 
-    const s = 1.4;
-    obj.scale.setScalar(s);
-    obj.position.set(x, h + 0.35 * s, z);
-    obj.renderOrder = 100;
+    const wrapper = new THREE.Group();
+    wrapper.add(marker);
+    wrapper.add(structObj);
 
-    this.group.add(obj);
-    this.meshes.set(id, obj);
-    return obj;
+    this.group.add(wrapper);
+    this.meshes.set(id, wrapper);
+    console.log('[STRUCT ADDED] group children:', this.group.children.length);
+    return wrapper;
   }
 
   removeStructure(id) {

@@ -99,6 +99,8 @@ export class MapRenderer {
         dummy.setPosition(x, h / 2, z);
         mesh.setMatrixAt(i, dummy);
         this.tileMeshMap.set(tileKey(r, c), { worldX: x, worldZ: z, height: h, type });
+        if (!mesh.userData.instances) mesh.userData.instances = [];
+        mesh.userData.instances.push({ r, c });
       }
       mesh.instanceMatrix.needsUpdate = true;
       this.baseGroup.add(mesh);
@@ -229,6 +231,19 @@ export class MapRenderer {
     this.highlightRing.visible = true;
   }
   hideSelect() { this.highlightRing.visible = false; }
+
+  raycastTile(raycaster) {
+    const hits = raycaster.intersectObjects(this.baseGroup.children, false);
+    for (const hit of hits) {
+      const mesh = hit.object;
+      const instances = mesh.userData.instances;
+      if (instances && hit.instanceId != null && instances[hit.instanceId]) {
+        const { r, c } = instances[hit.instanceId];
+        return { row: r, col: c };
+      }
+    }
+    return null;
+  }
 
   getTileHeight(row, col) {
     return this.tileMeshMap.get(tileKey(row, col))?.height ?? 0.3;

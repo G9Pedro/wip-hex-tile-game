@@ -19,13 +19,13 @@
         <div class="form-group">
           <label>Map</label>
           <select id="map-select">
-            <option value="maps/map.json">Default Map (170×190)</option>
+            <option value="generate" selected>Generate New Map (fast)</option>
             <option value="maps/lake.json">Lake (150×150)</option>
+            <option value="maps/map.json">Default Map (170×190)</option>
             <option value="maps/split.json">Split (200×200)</option>
-            <option value="generate">Generate New Map...</option>
           </select>
         </div>
-        <div id="gen-options" class="hidden">
+        <div id="gen-options">
           <div class="form-row">
             <div class="form-group half">
               <label>Width</label>

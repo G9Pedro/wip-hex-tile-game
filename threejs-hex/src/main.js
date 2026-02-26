@@ -22,7 +22,7 @@ class App {
 
     this._hoverTile = null;
     this._aiRunning = false;
-    this._groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    this._groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.25);
     this._mouse = new THREE.Vector2();
     this._intersection = new THREE.Vector3();
 
@@ -233,6 +233,12 @@ class App {
 
   _animate() {
     requestAnimationFrame(() => this._animate());
+
+    const cam = this.scene.camera;
+    const target = this.scene.controls.target;
+    const dist = cam.position.distanceTo(target);
+    this.mapRenderer.updateVisibleNumbers(target.x, target.z, dist);
+
     this.scene.render();
   }
 }

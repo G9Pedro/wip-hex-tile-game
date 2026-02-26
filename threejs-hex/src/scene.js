@@ -15,7 +15,7 @@ export class SceneManager {
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0a0a1a);
-    this.scene.fog = new THREE.Fog(0x0a0a1a, 80, 200);
+    this.scene.fog = new THREE.Fog(0x0a0a1a, 120, 350);
 
     this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 500);
     this.camera.position.set(0, 60, 50);
@@ -56,7 +56,7 @@ export class SceneManager {
 
   lookAt(x, z) {
     this.controls.target.set(x, 0, z);
-    this.camera.position.set(x, 60, z + 50);
+    this.camera.position.set(x + 10, 30, z + 25);
     this.controls.update();
   }
 

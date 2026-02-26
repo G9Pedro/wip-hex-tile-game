@@ -106,24 +106,61 @@ export class MapRenderer {
   }
 
   _addNumbers(rows, cols, numbers) {
+    this._numberData = [];
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const n = numbers[r]?.[c];
         if (!n || n === 0) continue;
-
         const info = this.tileMeshMap.get(tileKey(r, c));
         if (!info) continue;
-
-        const div = document.createElement('div');
-        div.className = 'tile-number';
-        if (n >= 6 && n <= 8) div.classList.add('hot');
-        else if (n === 5 || n === 9) div.classList.add('warm');
-        div.textContent = String(n);
-
-        const label = new CSS2DObject(div);
-        label.position.set(info.worldX, info.height + 0.15, info.worldZ);
-        this.numberLabels.add(label);
+        this._numberData.push({ r, c, n, wx: info.worldX, wz: info.worldZ, h: info.height });
       }
+    }
+    this._visibleLabels = new Map();
+  }
+
+  updateVisibleNumbers(camX, camZ, camDist) {
+    if (!this._numberData) return;
+    const showRadius = Math.min(25, camDist * 0.5);
+    const showNumbers = camDist < 80;
+
+    if (!showNumbers) {
+      for (const [key, obj] of this._visibleLabels) {
+        this.numberLabels.remove(obj);
+      }
+      this._visibleLabels.clear();
+      return;
+    }
+
+    const needed = new Set();
+    for (const nd of this._numberData) {
+      const dx = nd.wx - camX, dz = nd.wz - camZ;
+      if (dx * dx + dz * dz < showRadius * showRadius) {
+        needed.add(`${nd.r},${nd.c}`);
+      }
+    }
+
+    for (const [key, obj] of this._visibleLabels) {
+      if (!needed.has(key)) {
+        this.numberLabels.remove(obj);
+        this._visibleLabels.delete(key);
+      }
+    }
+
+    for (const nd of this._numberData) {
+      const key = `${nd.r},${nd.c}`;
+      if (!needed.has(key) || this._visibleLabels.has(key)) continue;
+
+      const div = document.createElement('div');
+      div.className = 'tile-number';
+      if (nd.n >= 6 && nd.n <= 8) div.classList.add('hot');
+      else if (nd.n === 5 || nd.n === 9) div.classList.add('warm');
+      div.textContent = String(nd.n);
+
+      const label = new CSS2DObject(div);
+      label.position.set(nd.wx, nd.h + 0.15, nd.wz);
+      this.numberLabels.add(label);
+      this._visibleLabels.set(key, label);
     }
   }
 

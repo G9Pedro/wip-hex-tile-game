@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hex Map 3D</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+    <div id="css2d-overlay"></div>
+
+    <!-- Setup Screen -->
+    <div id="setup-screen" class="overlay-panel">
+      <h1>Hex Map 3D</h1>
+      <p class="subtitle">A real-time strategy game</p>
+      <div class="setup-form">
+        <div class="form-group">
+          <label>Map</label>
+          <select id="map-select">
+            <option value="maps/map.json">Default Map (170×190)</option>
+            <option value="maps/lake.json">Lake (150×150)</option>
+            <option value="maps/split.json">Split (200×200)</option>
+            <option value="generate">Generate New Map...</option>
+          </select>
+        </div>
+        <div id="gen-options" class="hidden">
+          <div class="form-row">
+            <div class="form-group half">
+              <label>Width</label>
+              <input type="number" id="gen-width" value="80" min="30" max="200" />
+            </div>
+            <div class="form-group half">
+              <label>Height</label>
+              <input type="number" id="gen-height" value="80" min="30" max="200" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Seed</label>
+            <input type="text" id="gen-seed" value="random" placeholder="random" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Human Players</label>
+          <input type="number" id="human-count" value="1" min="1" max="4" />
+        </div>
+        <div class="form-group">
+          <label>AI Opponents</label>
+          <input type="number" id="ai-count" value="2" min="0" max="6" />
+        </div>
+        <div class="form-group">
+          <label>AI Difficulty</label>
+          <select id="ai-difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <button id="start-btn" class="btn-primary">Start Game</button>
+      </div>
+      <div id="loading-indicator" class="hidden">
+        <div class="spinner"></div>
+        <span>Loading map...</span>
+      </div>
+    </div>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+      <!-- Top bar -->
+      <div id="top-bar">
+        <div id="turn-info">
+          <span id="turn-label">Turn 1</span>
+          <span id="current-player-label">Player 1</span>
+        </div>
+        <div id="dice-result" class="hidden">
+          <span id="dice-value"></span>
+        </div>
+      </div>
+
+      <!-- Left panel: players -->
+      <div id="left-panel">
+        <div id="player-list"></div>
+      </div>
+
+      <!-- Right panel: structures -->
+      <div id="right-panel">
+        <h3>Structures</h3>
+        <div id="structure-list"></div>
+      </div>
+
+      <!-- Bottom bar: actions -->
+      <div id="bottom-bar">
+        <div id="tile-info"></div>
+        <div id="action-buttons">
+          <button id="btn-end-turn" class="btn-action">End Turn</button>
+          <button id="btn-cancel" class="btn-action hidden">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Resource popup on dice roll -->
+      <div id="resource-popup" class="hidden">
+        <div id="resource-popup-content"></div>
+      </div>
+
+      <!-- AI thinking indicator -->
+      <div id="ai-indicator" class="hidden">
+        <div class="spinner small"></div>
+        <span>AI is thinking...</span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -5,19 +5,6 @@ import { hexToWorld, tileKey } from './hex.js';
 
 const SQRT3 = Math.sqrt(3);
 
-function buildHexShape(radius) {
-  const shape = new THREE.Shape();
-  for (let i = 0; i < 6; i++) {
-    const angle = (Math.PI / 3) * i - Math.PI / 6;
-    const x = Math.cos(angle) * radius;
-    const y = Math.sin(angle) * radius;
-    if (i === 0) shape.moveTo(x, y);
-    else shape.lineTo(x, y);
-  }
-  shape.closePath();
-  return shape;
-}
-
 export class MapRenderer {
   constructor(scene) {
     this.scene = scene;
@@ -77,42 +64,34 @@ export class MapRenderer {
       }
     }
 
-    const hexShape = buildHexShape(HEX_SIZE * 0.995);
-    const extrudeSettings = { depth: 1, bevelEnabled: false };
-    const hexGeo = new THREE.ExtrudeGeometry(hexShape, extrudeSettings);
-    hexGeo.rotateX(-Math.PI / 2);
+    const hexGeo = new THREE.CylinderGeometry(HEX_SIZE * 0.98, HEX_SIZE * 0.98, 1, 6);
+    hexGeo.rotateY(Math.PI / 6);
 
     for (const [type, arr] of Object.entries(tilesByType)) {
       const color = TERRAIN_COLORS[type] || 0x444444;
       const baseH = TERRAIN_HEIGHT[type] || 0.3;
       const isWater = WATER_TILES.has(type);
 
-      const mat = new THREE.MeshStandardMaterial({
+      const material = new THREE.MeshLambertMaterial({
         color,
-        roughness: isWater ? 0.1 : 0.82,
-        metalness: isWater ? 0.4 : 0.02,
-        flatShading: !isWater,
+        flatShading: true,
       });
 
-      const mesh = new THREE.InstancedMesh(hexGeo, mat, arr.length);
+      const mesh = new THREE.InstancedMesh(hexGeo, material, arr.length);
       mesh.userData.instances = [];
       const dummy = new THREE.Matrix4();
-      const scale = new THREE.Matrix4();
-      const trans = new THREE.Matrix4();
 
       for (let i = 0; i < arr.length; i++) {
         const { r, c, elev } = arr[i];
         const h = baseH + elev;
         const { x, z } = hexToWorld(r, c);
-        scale.makeScale(1, h, 1);
-        trans.makeTranslation(x, 0, z);
-        dummy.multiplyMatrices(trans, scale);
+        dummy.makeScale(1, h, 1);
+        dummy.setPosition(x, h / 2, z);
         mesh.setMatrixAt(i, dummy);
         this.tileMeshMap.set(tileKey(r, c), { worldX: x, worldZ: z, height: h, type });
         mesh.userData.instances.push({ r, c });
       }
       mesh.instanceMatrix.needsUpdate = true;
-      mesh.receiveShadow = true;
       this.group.add(mesh);
     }
 

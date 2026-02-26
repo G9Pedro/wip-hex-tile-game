@@ -5,10 +5,10 @@ const _c = new THREE.Color();
 function ph(rgb) { return _c.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255).getHex(); }
 
 function mat(rgb) {
-  return new THREE.MeshLambertMaterial({ color: ph(rgb), emissive: ph(rgb), emissiveIntensity: 0.3 });
+  return new THREE.MeshBasicMaterial({ color: ph(rgb) });
 }
 function accent() {
-  return new THREE.MeshLambertMaterial({ color: 0xeeeeee, emissive: 0x444444, emissiveIntensity: 0.2 });
+  return new THREE.MeshBasicMaterial({ color: 0xdddddd });
 }
 function baseMat(rgb) {
   return new THREE.MeshBasicMaterial({ color: ph(rgb), transparent: true, opacity: 0.55, depthTest: false });

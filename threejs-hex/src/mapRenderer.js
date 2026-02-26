@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { TERRAIN_COLORS, TERRAIN_HEIGHT, WATER_TILES, HEX_SIZE } from './config.js';
-import { hexToWorld, tileKey } from './hex.js';
+import { hexToWorld, worldToHex, tileKey } from './hex.js';
 
 const SQRT3 = Math.sqrt(3);
 
@@ -149,14 +149,27 @@ export class MapRenderer {
   }
 
   raycastTile(raycaster) {
-    const hits = raycaster.intersectObjects(this.group.children, false);
-    for (const hit of hits) {
-      const inst = hit.object?.userData?.instances;
-      if (inst && hit.instanceId != null && inst[hit.instanceId]) {
-        return inst[hit.instanceId];
+    if (!this._groundPlane) {
+      this._groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.28);
+      this._hitPoint = new THREE.Vector3();
+    }
+    if (!raycaster.ray.intersectPlane(this._groundPlane, this._hitPoint)) return null;
+
+    const { row, col } = worldToHex(this._hitPoint.x, this._hitPoint.z);
+
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        const r = row + dr, c = col + dc;
+        const info = this.tileMeshMap.get(tileKey(r, c));
+        if (!info) continue;
+        const dx = this._hitPoint.x - info.worldX;
+        const dz = this._hitPoint.z - info.worldZ;
+        if (dx * dx + dz * dz < HEX_SIZE * HEX_SIZE * 0.85) {
+          return { row: r, col: c };
+        }
       }
     }
-    return null;
+    return this.tileMeshMap.has(tileKey(row, col)) ? { row, col } : null;
   }
 
   showHover(row, col) {

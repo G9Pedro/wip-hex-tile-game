@@ -2,6 +2,19 @@ import {
   STRUCTURE_DEFS, ALL_RESOURCES, RESOURCE_EMOJI, RESOURCE_COLORS,
 } from './config.js';
 
+const STRUCT_ICONS = {
+  road: '/Structures/Roads/road_start.png',
+  ship: '/Structures/Ships/ship_0.png',
+  port: '/Structures/Settlements/port_0.png',
+  outpost: '/Structures/Settlements/outpost_0.png',
+  farm: '/Structures/Settlements/farm_0.png',
+  trade_town: '/Structures/Settlements/trade_town_0.png',
+  factory: '/Structures/Settlements/factory_0.png',
+  wall: '/Structures/Walls/wall_h.png',
+  merc_camp: '/Structures/Settlements/mercenary_camp_0.png',
+  castle: '/Structures/Settlements/castle_0.png',
+};
+
 export class GameUI {
   constructor() {
     this.setupScreen = document.getElementById('setup-screen');
@@ -38,18 +51,15 @@ export class GameUI {
     this.mapSelect.addEventListener('change', () => {
       this.genOptions.classList.toggle('hidden', this.mapSelect.value !== 'generate');
     });
-
     this.startBtn.addEventListener('click', () => {
-      const mapValue = this.mapSelect.value;
-      const humanCount = parseInt(document.getElementById('human-count').value) || 1;
-      const aiCount = parseInt(document.getElementById('ai-count').value) || 2;
-      const difficulty = document.getElementById('ai-difficulty').value;
-      const genWidth = parseInt(document.getElementById('gen-width').value) || 80;
-      const genHeight = parseInt(document.getElementById('gen-height').value) || 80;
-      const genSeed = document.getElementById('gen-seed').value;
-
       this._onStart?.({
-        mapValue, humanCount, aiCount, difficulty, genWidth, genHeight, genSeed,
+        mapValue: this.mapSelect.value,
+        humanCount: parseInt(document.getElementById('human-count').value) || 1,
+        aiCount: parseInt(document.getElementById('ai-count').value) || 2,
+        difficulty: document.getElementById('ai-difficulty').value,
+        genWidth: parseInt(document.getElementById('gen-width').value) || 80,
+        genHeight: parseInt(document.getElementById('gen-height').value) || 80,
+        genSeed: document.getElementById('gen-seed').value,
       });
     });
   }
@@ -71,7 +81,7 @@ export class GameUI {
       if (def.category !== lastCat) {
         lastCat = def.category;
         const h = document.createElement('div');
-        h.style.cssText = 'font-size:0.75rem;color:#666;text-transform:uppercase;letter-spacing:0.5px;margin:8px 0 4px;';
+        h.className = 'struct-category';
         h.textContent = lastCat;
         this.structureList.appendChild(h);
       }
@@ -79,7 +89,16 @@ export class GameUI {
       const btn = document.createElement('button');
       btn.className = 'structure-btn';
       btn.dataset.type = key;
-      btn.innerHTML = `<div>${def.label}</div><div class="structure-cost">${this._formatCost(def.cost)}</div>`;
+
+      const icon = STRUCT_ICONS[key] || '';
+      btn.innerHTML = `
+        ${icon ? `<img src="${icon}" alt="${def.label}" />` : ''}
+        <div class="struct-info">
+          <div class="struct-name">${def.label}</div>
+          <div class="structure-cost">${this._formatCost(def.cost)}</div>
+        </div>
+      `;
+
       btn.addEventListener('click', () => {
         if (btn.classList.contains('disabled')) return;
         this._selectedStructure = this._selectedStructure === key ? null : key;
@@ -91,7 +110,7 @@ export class GameUI {
   }
 
   _formatCost(cost) {
-    return Object.entries(cost).map(([r, amt]) => `${RESOURCE_EMOJI[r] || r} ${amt}`).join(' ');
+    return Object.entries(cost).map(([r, amt]) => `${RESOURCE_EMOJI[r] || r}${amt}`).join(' ');
   }
 
   _updateStructureButtons() {
@@ -105,7 +124,6 @@ export class GameUI {
   onStructureSelect(fn) { this._onStructureSelect = fn; }
   onEndTurn(fn) { this._onEndTurn = fn; }
   onCancel(fn) { this._onCancel = fn; }
-
   get selectedStructure() { return this._selectedStructure; }
 
   clearSelection() {
@@ -126,9 +144,9 @@ export class GameUI {
   updateTurn(turn, player) {
     this.turnLabel.textContent = `Turn ${turn}`;
     this.playerLabel.textContent = player.name;
-    this.playerLabel.style.background = `rgba(${player.rgb.join(',')}, 0.3)`;
+    this.playerLabel.style.background = `rgba(${player.rgb.join(',')}, 0.25)`;
     this.playerLabel.style.borderLeft = `3px solid rgb(${player.rgb.join(',')})`;
-    this.playerLabel.style.paddingLeft = '10px';
+    this.playerLabel.style.paddingLeft = '8px';
   }
 
   updatePlayers(players, currentIndex) {
@@ -136,7 +154,7 @@ export class GameUI {
     for (let i = 0; i < players.length; i++) {
       const p = players[i];
       const card = document.createElement('div');
-      card.className = `player-card${i === currentIndex ? ' active' : ''}${p.isAI ? ' ai-player' : ''}`;
+      card.className = `player-card glass-panel${i === currentIndex ? ' active' : ''}${p.isAI ? ' ai-player' : ''}`;
 
       const header = document.createElement('div');
       header.className = 'player-header';
@@ -165,8 +183,7 @@ export class GameUI {
 
   updateAffordability(player) {
     for (const btn of this.structureList.querySelectorAll('.structure-btn')) {
-      const type = btn.dataset.type;
-      const def = STRUCTURE_DEFS[type];
+      const def = STRUCTURE_DEFS[btn.dataset.type];
       btn.classList.toggle('disabled', !player.canAfford(def.cost));
     }
   }
@@ -196,19 +213,13 @@ export class GameUI {
     }
     html += '</div>';
     if (!any) html = '<h4>No resources produced</h4>';
-
     this.resourcePopupContent.innerHTML = html;
     this.resourcePopup.classList.remove('hidden');
     setTimeout(() => this.resourcePopup.classList.add('hidden'), 2800);
   }
 
-  showAIThinking(show) {
-    this.aiIndicator.classList.toggle('hidden', !show);
-  }
-
-  setTileInfo(text) {
-    this.tileInfo.textContent = text;
-  }
+  showAIThinking(show) { this.aiIndicator.classList.toggle('hidden', !show); }
+  setTileInfo(text) { this.tileInfo.textContent = text; }
 
   setActionsEnabled(enabled) {
     this.btnEndTurn.style.opacity = enabled ? '1' : '0.4';

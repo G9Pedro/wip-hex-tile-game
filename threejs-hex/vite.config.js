@@ -6,6 +6,9 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:8000',
       '/maps': 'http://localhost:8000',
+      '/Tiles': 'http://localhost:8000',
+      '/Structures': 'http://localhost:8000',
+      '/Tile_icons': 'http://localhost:8000',
     },
   },
 });

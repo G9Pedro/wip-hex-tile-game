@@ -13,13 +13,13 @@
 
     <!-- Setup Screen -->
     <div id="setup-screen" class="overlay-panel">
-      <h1>Hex Map 3D</h1>
-      <p class="subtitle">A real-time strategy game</p>
+      <h1>Map Viewer</h1>
+      <p class="subtitle">Drag to pan. Wheel to zoom. Click to select or place.</p>
       <div class="setup-form">
         <div class="form-group">
           <label>Map</label>
           <select id="map-select">
-            <option value="generate" selected>Generate New Map (fast)</option>
+            <option value="generate" selected>Generate New Map</option>
             <option value="maps/lake.json">Lake (150×150)</option>
             <option value="maps/map.json">Default Map (170×190)</option>
             <option value="maps/split.json">Split (200×200)</option>
@@ -61,13 +61,12 @@
       </div>
       <div id="loading-indicator" class="hidden">
         <div class="spinner"></div>
-        <span>Loading map...</span>
+        <span>Loading map &amp; assets...</span>
       </div>
     </div>
 
     <!-- HUD -->
     <div id="hud" class="hidden">
-      <!-- Top bar -->
       <div id="top-bar">
         <div id="turn-info">
           <span id="turn-label">Turn 1</span>
@@ -78,33 +77,30 @@
         </div>
       </div>
 
-      <!-- Left panel: players -->
       <div id="left-panel">
         <div id="player-list"></div>
       </div>
 
-      <!-- Right panel: structures -->
-      <div id="right-panel">
+      <div id="right-panel" class="glass-panel">
         <h3>Structures</h3>
         <div id="structure-list"></div>
       </div>
 
-      <!-- Bottom bar: actions -->
+      <div id="minimap-container"></div>
+
       <div id="bottom-bar">
         <div id="tile-info"></div>
         <div id="action-buttons">
-          <button id="btn-end-turn" class="btn-action">End Turn</button>
+          <button id="btn-end-turn" class="btn-action">End turn</button>
           <button id="btn-cancel" class="btn-action hidden">Cancel</button>
         </div>
       </div>
 
-      <!-- Resource popup on dice roll -->
-      <div id="resource-popup" class="hidden">
+      <div id="resource-popup" class="glass-panel hidden">
         <div id="resource-popup-content"></div>
       </div>
 
-      <!-- AI thinking indicator -->
-      <div id="ai-indicator" class="hidden">
+      <div id="ai-indicator" class="glass-panel hidden">
         <div class="spinner small"></div>
         <span>AI is thinking...</span>
       </div>

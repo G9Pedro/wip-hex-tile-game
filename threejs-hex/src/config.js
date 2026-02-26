@@ -3,24 +3,32 @@ export const HEX_GAP = 0.06;
 export const EFFECTIVE_SIZE = HEX_SIZE - HEX_GAP;
 
 export const TERRAIN_COLORS = {
-  deep_water:   0x1a3a5c,
-  water:        0x2a5a8c,
-  shallow_water:0x4a8ab0,
-  grass:        0x5a9e4a,
-  forest:       0x2a6e2a,
-  jungle:       0x1a5a3a,
-  hills:        0x8a7a4a,
-  mountains:    0x7a7a7a,
-  snow:         0xe8e8f0,
-  taiga:        0x3a5a4a,
-  dirt:         0x8a6a4a,
-  clay:         0xb87333,
-  sand:         0xd4b870,
-  dunes:        0xc4a860,
-  swamp:        0x4a5a3a,
-  swamp_pads:   0x3a5a2a,
-  swamp_reeds:  0x5a6a3a,
-  wheat:        0xd4c040,
+  deep_water:   0x225189,
+  water:        0x397bb7,
+  shallow_water:0x7abcc2,
+  grass:        0x6fad42,
+  forest:       0x3e6b43,
+  jungle:       0x84a649,
+  hills:        0x538c47,
+  mountains:    0x61626b,
+  snow:         0xe1eff6,
+  taiga:        0x4d7b65,
+  dirt:         0x9a6d4f,
+  clay:         0x7c5542,
+  sand:         0xfbdc7f,
+  dunes:        0xe0c26d,
+  swamp:        0x365b4a,
+  swamp_pads:   0x365b4a,
+  swamp_reeds:  0x365b4a,
+  wheat:        0xb6a444,
+};
+
+export const TILE_VARIANTS = {
+  clay: 3, deep_water: 2, dirt: 2, dunes: 2,
+  forest: 4, grass: 4, hills: 2, jungle: 4,
+  mountains: 2, river_l: 1, river_r: 1, sand: 2,
+  shallow_water: 2, snow: 2, swamp: 2, swamp_pads: 1,
+  swamp_reeds: 3, taiga: 3, water: 2, wheat: 4,
 };
 
 export const TERRAIN_HEIGHT = {

@@ -1,17 +1,23 @@
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-import { TERRAIN_COLORS, TERRAIN_HEIGHT, WATER_TILES, EFFECTIVE_SIZE, HEX_SIZE } from './config.js';
+import {
+  TERRAIN_COLORS, TERRAIN_HEIGHT, WATER_TILES, EFFECTIVE_SIZE, HEX_SIZE, TILE_VARIANTS,
+} from './config.js';
 import { hexToWorld, tileKey } from './hex.js';
+import { tileVariantIndex } from './assetLoader.js';
 
+const SQRT3 = Math.sqrt(3);
 const HEX_SEGMENTS = 6;
 
 export class MapRenderer {
   constructor(scene) {
     this.scene = scene;
-    this.group = new THREE.Group();
-    this.scene.add(this.group);
-    this.numberLabels = new THREE.Group();
-    this.scene.add(this.numberLabels);
+    this.baseGroup = new THREE.Group();
+    this.spriteGroup = new THREE.Group();
+    this.numberGroup = new THREE.Group();
+    this.scene.add(this.baseGroup);
+    this.scene.add(this.spriteGroup);
+    this.scene.add(this.numberGroup);
     this.tileMeshMap = new Map();
     this.highlightRing = null;
     this.hoverRing = null;
@@ -20,45 +26,43 @@ export class MapRenderer {
 
   _buildHighlightRings() {
     const shape = new THREE.Shape();
-    const outer = HEX_SIZE * 1.02;
-    const inner = HEX_SIZE * 0.88;
+    const outer = HEX_SIZE * 1.05;
+    const inner = HEX_SIZE * 0.85;
     for (let i = 0; i <= 6; i++) {
       const angle = (Math.PI / 3) * i - Math.PI / 6;
-      const method = i === 0 ? 'moveTo' : 'lineTo';
-      shape[method](Math.cos(angle) * outer, Math.sin(angle) * outer);
+      const fn = i === 0 ? 'moveTo' : 'lineTo';
+      shape[fn](Math.cos(angle) * outer, Math.sin(angle) * outer);
     }
     const hole = new THREE.Path();
     for (let i = 0; i <= 6; i++) {
       const angle = (Math.PI / 3) * i - Math.PI / 6;
-      const method = i === 0 ? 'moveTo' : 'lineTo';
-      hole[method](Math.cos(angle) * inner, Math.sin(angle) * inner);
+      const fn = i === 0 ? 'moveTo' : 'lineTo';
+      hole[fn](Math.cos(angle) * inner, Math.sin(angle) * inner);
     }
     shape.holes.push(hole);
-
     const geo = new THREE.ShapeGeometry(shape);
     geo.rotateX(-Math.PI / 2);
 
     this.highlightRing = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-      color: 0x4ade80, transparent: true, opacity: 0.8, depthTest: false,
+      color: 0x4a90e2, transparent: true, opacity: 0.85, depthTest: false,
     }));
     this.highlightRing.visible = false;
     this.highlightRing.renderOrder = 999;
     this.scene.add(this.highlightRing);
 
     this.hoverRing = new THREE.Mesh(geo.clone(), new THREE.MeshBasicMaterial({
-      color: 0xffffff, transparent: true, opacity: 0.35, depthTest: false,
+      color: 0x80ccff, transparent: true, opacity: 0.4, depthTest: false,
     }));
     this.hoverRing.visible = false;
     this.hoverRing.renderOrder = 998;
     this.scene.add(this.hoverRing);
   }
 
-  renderMap(mapData) {
+  renderMap(mapData, tileTextures, numberTextures) {
     this._clear();
-
     const { rows, cols, tiles, dy, numbers } = mapData;
-    const tilesByType = {};
 
+    const tilesByType = {};
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const type = tiles[r][c];
@@ -72,14 +76,14 @@ export class MapRenderer {
     hexGeo.rotateY(Math.PI / 6);
 
     for (const [type, arr] of Object.entries(tilesByType)) {
-      const color = TERRAIN_COLORS[type] || 0x888888;
+      const color = TERRAIN_COLORS[type] || 0x444444;
       const baseH = TERRAIN_HEIGHT[type] || 0.3;
       const isWater = WATER_TILES.has(type);
 
       const mat = new THREE.MeshStandardMaterial({
         color,
-        roughness: isWater ? 0.2 : 0.75,
-        metalness: isWater ? 0.3 : 0.05,
+        roughness: isWater ? 0.15 : 0.7,
+        metalness: isWater ? 0.35 : 0.05,
         flatShading: true,
       });
 
@@ -94,18 +98,68 @@ export class MapRenderer {
         dummy.makeScale(1, h, 1);
         dummy.setPosition(x, h / 2, z);
         mesh.setMatrixAt(i, dummy);
-
-        const key = tileKey(r, c);
-        this.tileMeshMap.set(key, { worldX: x, worldZ: z, height: h, type });
+        this.tileMeshMap.set(tileKey(r, c), { worldX: x, worldZ: z, height: h, type });
       }
       mesh.instanceMatrix.needsUpdate = true;
-      this.group.add(mesh);
+      this.baseGroup.add(mesh);
     }
 
-    if (numbers) this._addNumbers(rows, cols, numbers);
+    if (tileTextures) {
+      this._addSpriteLayer(rows, cols, tiles, dy, tileTextures);
+    }
+
+    if (numbers) {
+      this._buildNumberData(rows, cols, numbers);
+    }
   }
 
-  _addNumbers(rows, cols, numbers) {
+  _addSpriteLayer(rows, cols, tiles, dy, tileTextures) {
+    const spriteW = SQRT3 * HEX_SIZE * 1.02;
+    const spriteH = 2.0 * HEX_SIZE * 1.02;
+    const planeGeo = new THREE.PlaneGeometry(spriteW, spriteH);
+    planeGeo.rotateX(-Math.PI / 2);
+
+    const grouped = {};
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const type = tiles[r][c];
+        const numVariants = TILE_VARIANTS[type] || 1;
+        const vi = tileVariantIndex(r, c, numVariants);
+        const texKey = `${type}_${vi}`;
+
+        const tex = tileTextures[type]?.[vi] || tileTextures[type]?.[0];
+        if (!tex) continue;
+
+        if (!grouped[texKey]) grouped[texKey] = { tex, entries: [] };
+        const elevation = (dy?.[r]?.[c] || 0) * 0.015;
+        const baseH = TERRAIN_HEIGHT[type] || 0.3;
+        grouped[texKey].entries.push({ r, c, h: baseH + elevation });
+      }
+    }
+
+    for (const { tex, entries } of Object.values(grouped)) {
+      const mat = new THREE.MeshBasicMaterial({
+        map: tex,
+        alphaTest: 0.5,
+        side: THREE.DoubleSide,
+      });
+
+      const mesh = new THREE.InstancedMesh(planeGeo, mat, entries.length);
+      const dummy = new THREE.Matrix4();
+
+      for (let i = 0; i < entries.length; i++) {
+        const { r, c, h } = entries[i];
+        const { x, z } = hexToWorld(r, c);
+        dummy.identity();
+        dummy.setPosition(x, h + 0.005, z);
+        mesh.setMatrixAt(i, dummy);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+      this.spriteGroup.add(mesh);
+    }
+  }
+
+  _buildNumberData(rows, cols, numbers) {
     this._numberData = [];
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -121,13 +175,11 @@ export class MapRenderer {
 
   updateVisibleNumbers(camX, camZ, camDist) {
     if (!this._numberData) return;
-    const showRadius = Math.min(25, camDist * 0.5);
-    const showNumbers = camDist < 80;
+    const showRadius = Math.min(30, camDist * 0.55);
+    const showNumbers = camDist < 90;
 
     if (!showNumbers) {
-      for (const [key, obj] of this._visibleLabels) {
-        this.numberLabels.remove(obj);
-      }
+      for (const [, obj] of this._visibleLabels) this.numberGroup.remove(obj);
       this._visibleLabels.clear();
       return;
     }
@@ -135,14 +187,12 @@ export class MapRenderer {
     const needed = new Set();
     for (const nd of this._numberData) {
       const dx = nd.wx - camX, dz = nd.wz - camZ;
-      if (dx * dx + dz * dz < showRadius * showRadius) {
-        needed.add(`${nd.r},${nd.c}`);
-      }
+      if (dx * dx + dz * dz < showRadius * showRadius) needed.add(`${nd.r},${nd.c}`);
     }
 
     for (const [key, obj] of this._visibleLabels) {
       if (!needed.has(key)) {
-        this.numberLabels.remove(obj);
+        this.numberGroup.remove(obj);
         this._visibleLabels.delete(key);
       }
     }
@@ -158,8 +208,8 @@ export class MapRenderer {
       div.textContent = String(nd.n);
 
       const label = new CSS2DObject(div);
-      label.position.set(nd.wx, nd.h + 0.15, nd.wz);
-      this.numberLabels.add(label);
+      label.position.set(nd.wx, nd.h + 0.2, nd.wz);
+      this.numberGroup.add(label);
       this._visibleLabels.set(key, label);
     }
   }
@@ -170,7 +220,6 @@ export class MapRenderer {
     this.hoverRing.position.set(info.worldX, info.height + 0.02, info.worldZ);
     this.hoverRing.visible = true;
   }
-
   hideHover() { this.hoverRing.visible = false; }
 
   showSelect(row, col) {
@@ -179,32 +228,34 @@ export class MapRenderer {
     this.highlightRing.position.set(info.worldX, info.height + 0.03, info.worldZ);
     this.highlightRing.visible = true;
   }
-
   hideSelect() { this.highlightRing.visible = false; }
 
   getTileHeight(row, col) {
-    const info = this.tileMeshMap.get(tileKey(row, col));
-    return info ? info.height : 0.3;
+    return this.tileMeshMap.get(tileKey(row, col))?.height ?? 0.3;
   }
 
   getCenter() {
     let sx = 0, sz = 0, n = 0;
-    for (const { worldX, worldZ } of this.tileMeshMap.values()) {
-      sx += worldX; sz += worldZ; n++;
-    }
+    for (const { worldX, worldZ } of this.tileMeshMap.values()) { sx += worldX; sz += worldZ; n++; }
     return n > 0 ? { x: sx / n, z: sz / n } : { x: 0, z: 0 };
   }
 
   _clear() {
-    while (this.group.children.length) {
-      const c = this.group.children[0];
-      c.geometry?.dispose();
-      c.material?.dispose();
-      this.group.remove(c);
-    }
-    while (this.numberLabels.children.length) {
-      this.numberLabels.remove(this.numberLabels.children[0]);
-    }
+    const dispose = (g) => {
+      while (g.children.length) {
+        const c = g.children[0];
+        c.geometry?.dispose();
+        if (c.material) {
+          if (Array.isArray(c.material)) c.material.forEach(m => m.dispose());
+          else c.material.dispose();
+        }
+        g.remove(c);
+      }
+    };
+    dispose(this.baseGroup);
+    dispose(this.spriteGroup);
+    dispose(this.numberGroup);
     this.tileMeshMap.clear();
+    this._visibleLabels?.clear();
   }
 }
